@@ -3,15 +3,15 @@ module Engine where
 import Prelude
 
 import Control.Monad.Reader (class MonadReader, ask, runReaderT)
-import Control.Monad.State (class MonadState, get, modify_, runStateT)
+import Control.Monad.State (class MonadState, execStateT, get, modify_)
 import Data.Array as Array
-import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe')
 import Data.Traversable (traverse)
 import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
+import Record as Record
 import Types (Expr, Rule(..), Tree(..))
 import Utility (unreachable)
 
@@ -23,17 +23,19 @@ type Ctx =
   }
 
 type Env =
-  { bestWeight :: Weight
+  { bestExprWeight :: Weight
   , bestExpr :: Expr
   }
 
-run ctx env expr =
+run ctx env expr = do
+  bestExprWeight <- ctx.weightExpr expr # liftAff
   step identity expr
-    # flip runReaderT ctx'
-    # flip runStateT env'
-  where
-  ctx' = ctx
-  env' = env
+    # flip runReaderT
+        ctx
+    # flip execStateT
+        ( Record.merge env
+            { bestExpr: expr, bestExprWeight }
+        )
 
 -- recursively step through entire expression
 step :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m => (Expr -> Expr) -> Expr -> m Expr
@@ -42,7 +44,7 @@ step wrap expr = do
   es' <- es # traverseWithIndex \i ->
     step
       ( wrap <<< \exprKid' ->
-          Tree l (es # List.updateAt i exprKid' # fromMaybe' (\_ -> unreachable "kid index out of bounds"))
+          Tree l (es # Array.updateAt i exprKid' # fromMaybe' (\_ -> unreachable "kid index out of bounds"))
       )
   let expr' = Tree l es'
   stepHere wrap expr'
@@ -81,7 +83,7 @@ updateBestExpr :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m 
 updateBestExpr expr = do
   { weightExpr } <- ask
   weight <- weightExpr expr # liftAff
-  { bestWeight } <- get
-  when (weight < bestWeight) (modify_ _ { bestWeight = weight, bestExpr = expr })
+  { bestExprWeight } <- get
+  when (weight < bestExprWeight) (modify_ _ { bestExprWeight = weight, bestExpr = expr })
   pure unit
 
