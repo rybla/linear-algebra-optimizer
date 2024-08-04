@@ -19,7 +19,7 @@ type Weight = Number
 
 type Ctx =
   { rules :: Array Rule
-  , weightExpr :: Expr -> Aff Weight
+  , calcWeight :: Expr -> Aff Weight
   }
 
 type Env =
@@ -28,7 +28,7 @@ type Env =
   }
 
 run ctx env expr = do
-  bestExprWeight <- ctx.weightExpr expr # liftAff
+  bestExprWeight <- ctx.calcWeight expr # liftAff
   step identity expr
     # flip runReaderT
         ctx
@@ -59,30 +59,28 @@ stepHere wrap expr = do
 
 tryRules :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m => Array Rule -> (Expr -> Expr) -> Expr -> m (Maybe Expr)
 tryRules rules wrap expr = do
-  { weightExpr } <- ask
+  { calcWeight } <- ask
   exprs_and_weights <- rules
     # traverse
         ( \rule -> tryRule rule expr >>= case _ of
             Nothing -> pure Nothing
             Just expr' -> do
               let expr'Top = wrap expr'
-              expr'Top_weight <- expr'Top # weightExpr # liftAff
+              expr'Top_weight <- expr'Top # calcWeight # liftAff
               pure (Just (expr' /\ expr'Top /\ expr'Top_weight))
         )
     # map (Array.foldMap Array.fromFoldable)
   case Array.sortBy (\(_ /\ _ /\ w1) (_ /\ _ /\ w2) -> w1 `compare` w2) exprs_and_weights # Array.head of
     Nothing -> pure Nothing
-    Just (expr' /\ _ /\ _) -> do
-      updateBestExpr expr' # void
+    Just (expr' /\ _ /\ weight') -> do
+      updateBestExpr expr' weight' # void
       pure (Just expr')
 
 tryRule :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m => Rule -> Expr -> m (Maybe Expr)
 tryRule (Rule f) expr = pure (f expr)
 
-updateBestExpr :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m => Expr -> m Unit
-updateBestExpr expr = do
-  { weightExpr } <- ask
-  weight <- weightExpr expr # liftAff
+updateBestExpr :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m => Expr -> Weight -> m Unit
+updateBestExpr expr weight = do
   { bestExprWeight } <- get
   when (weight < bestExprWeight) (modify_ _ { bestExprWeight = weight, bestExpr = expr })
   pure unit

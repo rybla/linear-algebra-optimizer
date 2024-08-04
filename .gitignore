@@ -196,3 +196,5 @@ output
 
 .psc-ide-port
 .purs-repl
+
+python/*

@@ -3,6 +3,7 @@ workspace:
     algebra-optimizer:
       path: ./
       dependencies:
+        - aff-promise
         - arrays
         - console
         - effect
@@ -15,6 +16,7 @@ workspace:
       test_dependencies: []
       build_plan:
         - aff
+        - aff-promise
         - arrays
         - avar
         - bifunctors
@@ -612,6 +614,13 @@ packages:
       - tailrec
       - transformers
       - unsafe-coerce
+  aff-promise:
+    type: registry
+    version: 4.0.0
+    integrity: sha256-Kq5EupbUpXeUXx4JqGQE7/RTTz/H6idzWhsocwlEFhM=
+    dependencies:
+      - aff
+      - foreign
   arrays:
     type: registry
     version: 7.3.0
