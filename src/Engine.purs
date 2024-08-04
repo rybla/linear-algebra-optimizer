@@ -13,10 +13,8 @@ import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console as Console
 import Record as Record
-import Types (Expr, Rule(..), Tree(..))
+import Types (Expr, Rule(..), Tree(..), Weight)
 import Utility (unreachable)
-
-type Weight = Number
 
 type Ctx =
   { rules :: Array Rule

@@ -10,9 +10,8 @@ import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class.Console as Console
-import Engine (Weight)
 import Engine as Engine
-import Types (ExprLabel(..), Rule(..), Tree(..), Expr, add, matrix)
+import Types (Expr, ExprLabel(..), Rule(..), Tree(..), Weight, add, matrix)
 
 main :: Effect Unit
 main = launchAff_ do

@@ -2,13 +2,22 @@ module Types where
 
 import Prelude
 
+import Data.Array as Array
+import Data.Array.ST as Array.ST
 import Data.Eq.Generic (genericEq)
 import Data.Foldable (class Foldable)
+import Data.FoldableWithIndex (traverseWithIndex_)
 import Data.Generic.Rep (class Generic)
-import Data.List (List)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe, fromMaybe')
 import Data.Show.Generic (genericShow)
 import Data.Traversable (class Traversable)
+import Data.Tuple.Nested (type (/\), (/\))
+import Utility (unreachable)
+
+-- =============================================================================
+-- Meta
+
+type Weight = Number
 
 -- =============================================================================
 -- Math
@@ -33,6 +42,20 @@ instance Eq a => Eq (Tree a) where
 derive instance Functor Tree
 derive instance Foldable Tree
 derive instance Traversable Tree
+
+unfoldTreeWithWrap :: forall a. Tree a -> Array ((Tree a -> Tree a) /\ Tree a)
+unfoldTreeWithWrap t0 = Array.ST.run do
+  results <- Array.ST.new
+  let
+    go wrap t@(Tree l ts) = do
+      results # Array.ST.push (wrap /\ t) # void
+      ts # traverseWithIndex_ \i -> go
+        ( wrap <<<
+            \tKid' -> Tree l (ts # Array.updateAt i tKid' # fromMaybe' (\_ -> unreachable "tree kid index out of bounds"))
+        )
+      pure unit
+  go identity t0
+  pure results
 
 -- =============================================================================
 -- Expr

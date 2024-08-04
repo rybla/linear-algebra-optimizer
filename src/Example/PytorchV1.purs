@@ -18,11 +18,10 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import Engine (Weight)
-import Engine as Engine
+import EngineV2 as Engine
 import FileSystem as FS
 import Process as Process
-import Types (Expr, ExprLabel(..), Rule(..), S, Tree(..), add, matrix, ones)
+import Types (Expr, ExprLabel(..), Rule(..), S, Tree(..), Weight, add, matrix, ones)
 import Utility (unreachable)
 
 main :: Effect Unit
@@ -33,27 +32,28 @@ main = launchAff_ do
     { rules
     , calcWeight: calcWeight counter_ref
     -- , calcWeight: calcWeight_simple
+    , initialLevel: 1
     }
   env <- pure {}
   expr <- pure
     ( matrix [ [ 1.0, 2.0 ], [ 3.0, 4.0 ] ]
         `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
         `add` ones 2 2
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
     )
   _env' <- Engine.run ctx env expr
   pure unit
