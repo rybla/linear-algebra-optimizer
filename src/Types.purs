@@ -40,7 +40,8 @@ derive instance Traversable Tree
 type Expr = Tree ExprLabel
 
 data ExprLabel
-  = Lit M -- m*n -> m*n
+  = Matrix M -- m*n -> m*n
+  | Scalar S
   | Add -- m*n, m*n -> m*n
   | Scale -- 1*1, m*n -> m*n
   | Dot -- m*n, n*m -> m*m
@@ -48,6 +49,8 @@ data ExprLabel
   | Transpose -- m*n -> n*m
   | Inverse -- n*n -> n*n
   | Determinant -- n*n -> 1*1
+  | Ones Int Int -- forall m, n. m*n
+  | Zeros Int Int -- forall m, n. m*n
 
 derive instance Generic ExprLabel _
 
@@ -57,7 +60,8 @@ instance Show ExprLabel where
 instance Eq ExprLabel where
   eq x = genericEq x
 
-lit m = Tree (Lit m) []
+matrix m = Tree (Matrix m) []
+scalar s = Tree (Scalar s) []
 add m1 m2 = Tree Add [ m1, m2 ]
 scale s m = Tree Scale [ s, m ]
 dot m1 m2 = Tree Dot [ m1, m2 ]
@@ -65,9 +69,11 @@ cross m1 m2 = Tree Cross [ m1, m2 ]
 trans m = Tree Transpose [ m ]
 inv m = Tree Inverse [ m ]
 det m = Tree Determinant [ m ]
+ones m n = Tree (Ones m n) []
+zeros m n = Tree (Zeros m n) []
 
 -- =============================================================================
 -- Rule
 
-newtype Rule = Rule (Expr -> Maybe Expr)
+data Rule = Rule String (Expr -> Maybe Expr)
 

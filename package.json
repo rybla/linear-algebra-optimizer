@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "PytorchV1": "bun spago bundle --module Example.PytorchV1 --outfile ./dist/ExamplePytorchV1.js --bundle-type app && bun run ./dist/ExamplePytorchV1.js"
+    "PytorchV1": "./clean_python.sh && bun spago bundle --module Example.PytorchV1 --outfile ./dist/ExamplePytorchV1.js --bundle-type app && bun run ./dist/ExamplePytorchV1.js"
   },
   "devDependencies": {
     "@types/bun": "^1.1.6",

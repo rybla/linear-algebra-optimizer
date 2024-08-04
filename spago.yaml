@@ -8,6 +8,7 @@ package:
     - halogen
     - lists
     - maybe
+    - parallel
     - prelude
     - record
     - transformers
