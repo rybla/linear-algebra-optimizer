@@ -27,35 +27,40 @@ import Utility (unreachable)
 main :: Effect Unit
 main = launchAff_ do
   Console.log "[main]"
-  counter_ref <- 0 # Ref.new # liftEffect
+  
+  -- calcWeight <- make_calcWeight_torchCompileLineCount
+  let calcWeight = calcWeight_treeSize
   ctx <- pure
     { rules
-    , calcWeight: calcWeight counter_ref
-    -- , calcWeight: calcWeight_simple
-    , initialLevel: 1
+    , calcWeight
+    , depth: 3
     }
+  
   env <- pure {}
+  
   expr <- pure
     ( matrix [ [ 1.0, 2.0 ], [ 3.0, 4.0 ] ]
         `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
         `add` ones 2 2
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
     )
+  
   _env' <- Engine.run ctx env expr
+  
   pure unit
 
 rules :: Array Rule
@@ -64,12 +69,6 @@ rules =
       case _ of
         Tree Add [ Tree (Matrix m1) [], Tree (Matrix m2) [] ] -> Just (Tree (Matrix (zipWith (zipWith Semiring.add) m1 m2)) [])
         _ -> Nothing
-  -- , Rule "matrix addition associativity"
-  --     -- normalize associativity to the left
-  --     -- m1 + (m2 + m3) => (m1 + m2) + m3
-  --     case _ of
-  --       Tree Add [ m1, Tree Add [ m2, m3 ] ] -> Just (Tree Add [ Tree Add [ m1, m2 ], m3 ])
-  --       _ -> Nothing
   , Rule "matrix addition associativity"
       case _ of
         Tree Add [ Tree (Matrix _) [], Tree Add [ Tree (Matrix _) [], Tree (Matrix _) [] ] ] -> Nothing
@@ -86,19 +85,29 @@ rules =
         _ -> Nothing
   ]
 
-calcWeight_simple :: Expr -> Aff Weight
+calcWeight_treeSize :: Expr -> Aff Weight
 -- example: count number of nodes
-calcWeight_simple expr = expr # traverse (const (modify_ (_ + 1.0))) # flip execStateT 0.0
+calcWeight_treeSize expr = expr # traverse (const (modify_ (_ + 1.0))) # flip execStateT 0.0
 
-calcWeight :: Ref Int -> Expr -> Aff Weight
+make_calcWeight_torchCompileLineCount :: Aff (Expr -> Aff Weight)
+make_calcWeight_torchCompileLineCount = do
+  counter_ref <- 0 # Ref.new # liftEffect
+  pure (calcWeight_torchCompileLineCount counter_ref)
+
+calcWeight_torchCompileLineCount :: Ref Int -> Expr -> Aff Weight
 -- example: count number of lines in torch-compiled C
-calcWeight counter_ref expr = do
+calcWeight_torchCompileLineCount counter_ref expr = do
   counter <- counter_ref # Ref.modify (_ + 1) # liftEffect
   compile ("expr" <> show counter) expr
     # map (String.split (String.Pattern "\n") >>> length)
 
+python_dir :: String 
 python_dir = "./python/"
+
+make_python_filename :: String -> String
 make_python_filename name = python_dir <> name <> ".py"
+
+make_log_filename :: String -> String
 make_log_filename name = python_dir <> name <> ".log.txt"
 
 compile :: String -> Expr -> Aff String

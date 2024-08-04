@@ -1,6 +1,6 @@
 workspace:
   packages:
-    algebra-optimizer:
+    linear-algebra-optimizer:
       path: ./
       dependencies:
         - aff-promise

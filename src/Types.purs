@@ -12,7 +12,8 @@ import Data.Maybe (Maybe, fromMaybe')
 import Data.Show.Generic (genericShow)
 import Data.Traversable (class Traversable)
 import Data.Tuple.Nested (type (/\), (/\))
-import Utility (unreachable)
+import Partial.Unsafe (unsafeCrashWith)
+import Utility (todo, unreachable)
 
 -- =============================================================================
 -- Meta
@@ -61,6 +62,22 @@ unfoldTreeWithWrap t0 = Array.ST.run do
 -- Expr
 
 type Expr = Tree ExprLabel
+
+showExpr :: Expr -> String
+showExpr (Tree (Matrix m) []) = show m
+showExpr (Tree (Scalar s) []) = show s
+showExpr (Tree Add [ e1, e2 ]) = parens $ showExpr e1 <> " + " <> showExpr e2
+showExpr (Tree Scale [ e1, e2 ]) = parens $ showExpr e1 <> " * " <> showExpr e2
+showExpr (Tree Dot [ e1, e2 ]) = parens $ showExpr e1 <> " • " <> showExpr e2
+showExpr (Tree Cross [ e1, e2 ]) = parens $ showExpr e1 <> " × " <> showExpr e2
+showExpr (Tree Transpose [ e ]) = showExpr e <> "^T"
+showExpr (Tree Inverse [ e ]) = showExpr e <> "^-1"
+showExpr (Tree Determinant [ e ]) = "det" <> parens (showExpr e)
+showExpr (Tree (Zeros m n) []) = parens $ " 0 | " <> show m <> ", " <> show n <> " "
+showExpr (Tree (Ones m n) []) = parens $ " 1 | " <> show m <> ", " <> show n <> " "
+showExpr e = unsafeCrashWith $ "invalid Expr: " <> show e
+
+parens s = "(" <> s <> ")"
 
 data ExprLabel
   = Matrix M -- m*n -> m*n

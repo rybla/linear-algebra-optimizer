@@ -1,5 +1,5 @@
 package:
-  name: algebra-optimizer
+  name: linear-algebra-optimizer
   dependencies:
     - aff-promise
     - arrays

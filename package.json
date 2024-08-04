@@ -1,5 +1,5 @@
 {
-  "name": "algebra-optimizer",
+  "name": "linear-algebra-optimizer",
   "module": "index.ts",
   "type": "module",
   "scripts": {
