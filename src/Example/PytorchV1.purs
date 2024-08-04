@@ -2,12 +2,15 @@ module Example.PytorchV1 where
 
 import Prelude hiding (add)
 
+import Control.Monad.State (execStateT)
+import Control.Monad.State.Class (modify_)
 import Data.Array (zipWith)
 import Data.Array as Array
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..))
 import Data.Semiring as Semiring
 import Data.String as String
+import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Aff.Class (liftAff)
@@ -26,20 +29,31 @@ main :: Effect Unit
 main = launchAff_ do
   Console.log "[main]"
   counter_ref <- 0 # Ref.new # liftEffect
-  ctx <- pure { rules, calcWeight: calcWeight counter_ref }
+  ctx <- pure
+    { rules
+    , calcWeight: calcWeight counter_ref
+    -- , calcWeight: calcWeight_simple
+    }
   env <- pure {}
-  -- expr <- pure (matrix [ [ 1.0 ] ] `add` matrix [ [ 2.0 ] ])
   expr <- pure
-    -- ( ones 2 2
-    --     `add` zeros 2 2
-    --     `add` matrix [ [ 1.0, 2.0 ], [ 3.0, 4.0 ] ]
-    --     `add` scalar 2.0
-    --     `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
-    -- )
-    -- (ones 2 2 `add` ones 2 2 `add` ones 2 2)
     ( matrix [ [ 1.0, 2.0 ], [ 3.0, 4.0 ] ]
-        `add` ones 2 2
         `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        `add` ones 2 2
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
+        -- `add` matrix [ [ 5.0, 6.0 ], [ 7.0, 8.0 ] ]
     )
   _env' <- Engine.run ctx env expr
   pure unit
@@ -50,19 +64,31 @@ rules =
       case _ of
         Tree Add [ Tree (Matrix m1) [], Tree (Matrix m2) [] ] -> Just (Tree (Matrix (zipWith (zipWith Semiring.add) m1 m2)) [])
         _ -> Nothing
+  -- , Rule "matrix addition associativity"
+  --     -- normalize associativity to the left
+  --     -- m1 + (m2 + m3) => (m1 + m2) + m3
+  --     case _ of
+  --       Tree Add [ m1, Tree Add [ m2, m3 ] ] -> Just (Tree Add [ Tree Add [ m1, m2 ], m3 ])
+  --       _ -> Nothing
   , Rule "matrix addition associativity"
-      -- normalize associativity to the left
-      -- m1 + (m2 + m3) => (m1 + m2) + m3
       case _ of
-        Tree Add [ Tree Add [ m1, m2 ], m3 ] -> Just (Tree Add [ m1, Tree Add [ m2, m3 ] ])
+        Tree Add [ Tree (Matrix _) [], Tree Add [ Tree (Matrix _) [], Tree (Matrix _) [] ] ] -> Nothing
+        Tree Add [ Tree Add [ Tree (Matrix _) [], Tree (Matrix _) [] ], Tree (Matrix _) [] ] -> Nothing
+        Tree Add [ m1@(Tree (Matrix _) []), Tree Add [ m2@(Tree (Matrix _) []), m3 ] ] -> Just (Tree Add [ Tree Add [ m1, m2 ], m3 ])
+        Tree Add [ Tree Add [ m1, m2@(Tree (Matrix _) []) ], m3@(Tree (Matrix _) []) ] -> Just (Tree Add [ m1, Tree Add [ m2, m3 ] ])
         _ -> Nothing
   , Rule "matrix addition commutativity"
       case _ of
         -- commute matrix literals to the right
         Tree Add [ _, Tree (Matrix _) [] ] -> Nothing
+        Tree Add [ Tree (Matrix _) [], Tree (Matrix _) [] ] -> Nothing
         Tree Add [ m1@(Tree (Matrix _) []), m2 ] -> Just (Tree Add [ m2, m1 ])
         _ -> Nothing
   ]
+
+calcWeight_simple :: Expr -> Aff Weight
+-- example: count number of nodes
+calcWeight_simple expr = expr # traverse (const (modify_ (_ + 1.0))) # flip execStateT 0.0
 
 calcWeight :: Ref Int -> Expr -> Aff Weight
 -- example: count number of lines in torch-compiled C

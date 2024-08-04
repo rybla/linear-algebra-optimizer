@@ -28,22 +28,26 @@ type Env =
   , bestExpr :: Expr
   }
 
-run ctx env expr = do
-  bestExprWeight <- ctx.calcWeight expr # liftAff
+run ctx env initialExpr = do
+  initialExprWeight <- ctx.calcWeight initialExpr # liftAff
   Console.log "[start engine]"
-  Console.log ("initial expr:\n    " <> show expr)
-  Console.log ("initial bestExprWeight: " <> show bestExprWeight)
+  Console.log ("initial expr:\n    " <> show initialExpr)
+  Console.log ("initial bestExprWeight: " <> show initialExprWeight)
   Console.log ""
-  res <- step identity expr
+  res <- step identity initialExpr
     # flip runReaderT
         ctx
     # flip execStateT
         ( Record.merge env
-            { bestExpr: expr, bestExprWeight }
+            { bestExpr: initialExpr
+            , bestExprWeight: initialExprWeight
+            }
         )
   Console.log ""
-  Console.log ("final expr:\n    " <> show res.bestExpr)
-  Console.log ("final bestExprWeight: " <> show res.bestExprWeight)
+  Console.log ("initial expr:\n    " <> show initialExpr)
+  Console.log ("final   expr:\n    " <> show res.bestExpr)
+  Console.log ("initial initialExprWeight: " <> show initialExprWeight)
+  Console.log ("final      bestExprWeight: " <> show res.bestExprWeight)
   Console.log "[end engine]"
   pure res
 
@@ -76,7 +80,8 @@ tryRules rules wrap expr = do
           ( \rule@(Rule rulename _) -> case tryRule rule expr of
               Nothing -> pure Nothing
               Just expr' -> do
-                Console.log ("used rule " <> show rulename <> ":\n    " <> show expr <> " =>\n    " <> show expr')
+                Console.log ""
+                Console.log ("[rule " <> show rulename <> "]\n    " <> show expr <> " =>\n    " <> show expr')
                 let expr'Top = wrap expr'
                 expr'Top_weight <- expr'Top # calcWeight # liftAff
                 pure (Just (expr' /\ expr'Top /\ expr'Top_weight))
@@ -85,8 +90,8 @@ tryRules rules wrap expr = do
       # liftAff
   case Array.sortBy (\(_ /\ _ /\ w1) (_ /\ _ /\ w2) -> w1 `compare` w2) exprs_and_weights # Array.head of
     Nothing -> pure Nothing
-    Just (expr' /\ _ /\ weight') -> do
-      updateBestExpr expr' weight' # void
+    Just (expr' /\ expr'Top /\ expr'Top_weight) -> do
+      updateBestExpr expr'Top expr'Top_weight # void
       pure (Just expr')
 
 tryRule :: Rule -> Expr -> Maybe Expr
@@ -95,6 +100,11 @@ tryRule (Rule _ f) expr = f expr
 updateBestExpr :: forall m. MonadReader Ctx m => MonadState Env m => MonadAff m => Expr -> Weight -> m Unit
 updateBestExpr expr weight = do
   { bestExprWeight } <- get
-  when (weight < bestExprWeight) (modify_ _ { bestExprWeight = weight, bestExpr = expr })
+  when (weight < bestExprWeight) do
+    Console.log ""
+    Console.log "[progress]"
+    Console.log ("    bestExpr: " <> show expr)
+    Console.log ("    bestExprWeight: " <> show weight)
+    modify_ _ { bestExprWeight = weight, bestExpr = expr }
   pure unit
 
