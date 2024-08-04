@@ -80,7 +80,7 @@ parens s = "(" <> s <> ")"
 
 data ExprLabel
   = Matrix M -- m*n -> m*n
-  | Scalar S
+  | Scalar S -- 1*1
   | Add -- m*n, m*n -> m*n
   | Scale -- 1*1, m*n -> m*n
   | Dot -- m*n, n*m -> m*m
