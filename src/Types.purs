@@ -12,8 +12,7 @@ import Data.Maybe (Maybe, fromMaybe')
 import Data.Show.Generic (genericShow)
 import Data.Traversable (class Traversable)
 import Data.Tuple.Nested (type (/\), (/\))
-import Partial.Unsafe (unsafeCrashWith)
-import Utility (todo, unreachable)
+import Utility (unreachable)
 
 -- =============================================================================
 -- Meta
@@ -75,7 +74,7 @@ showExpr (Tree Inverse [ e ]) = showExpr e <> "^-1"
 showExpr (Tree Determinant [ e ]) = "det" <> parens (showExpr e)
 showExpr (Tree (Zeros m n) []) = parens $ " 0 | " <> show m <> ", " <> show n <> " "
 showExpr (Tree (Ones m n) []) = parens $ " 1 | " <> show m <> ", " <> show n <> " "
-showExpr e = unsafeCrashWith $ "invalid Expr: " <> show e
+showExpr e = unreachable $ "invalid Expr: " <> show e
 
 parens s = "(" <> s <> ")"
 
@@ -102,13 +101,13 @@ instance Eq ExprLabel where
 
 matrix m = Tree (Matrix m) []
 scalar s = Tree (Scalar s) []
-add m1 m2 = Tree Add [ m1, m2 ]
+add e1 e2 = Tree Add [ e1, e2 ]
 scale s m = Tree Scale [ s, m ]
-dot m1 m2 = Tree Dot [ m1, m2 ]
-cross m1 m2 = Tree Cross [ m1, m2 ]
-trans m = Tree Transpose [ m ]
-inv m = Tree Inverse [ m ]
-det m = Tree Determinant [ m ]
+dot e1 e2 = Tree Dot [ e1, e2 ]
+cross e1 e2 = Tree Cross [ e1, e2 ]
+trans e = Tree Transpose [ e ]
+inv e = Tree Inverse [ e ]
+det e = Tree Determinant [ e ]
 ones m n = Tree (Ones m n) []
 zeros m n = Tree (Zeros m n) []
 
